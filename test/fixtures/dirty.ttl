@@ -1,0 +1,8 @@
+@prefix cco: <https://www.commoncoreontologies.org/> .
+# This comment mentions cco:ont99999999 and cco:has_output -- must be ignored
+ex:subject1 cco:ont00000042 ex:object1 .
+ex:subject2 cco:ont00001234 ex:object2 .
+ex:subject3 cco:ont99999999 ex:object3 .
+<https://www.commoncoreontologies.org/ont99999999> a owl:Class .
+ex:subject4 cco:has_output ex:object4 .
+ex:subject5 cco:ONT001 ex:object5 .

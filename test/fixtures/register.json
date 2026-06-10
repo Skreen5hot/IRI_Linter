@@ -1,0 +1,5 @@
+[
+  {"iri":"https://www.commoncoreontologies.org/ont00001986","alias":"has output","label":"Has Output"},
+  {"iri":"https://www.commoncoreontologies.org/ont00000042","alias":"process","label":"Process"},
+  {"iri":"https://www.commoncoreontologies.org/ont00001234","alias":"agent","label":"Agent"}
+]

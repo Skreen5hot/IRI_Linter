@@ -1,0 +1,5 @@
+@prefix cco: <https://www.commoncoreontologies.org/> .
+# This comment mentions cco:ont99999999 and must be ignored
+ex:subject cco:ont00000042 ex:object .
+ex:subject2 cco:ont00001234 ex:object2 .
+<https://www.commoncoreontologies.org/ont00001986> a owl:Class .
