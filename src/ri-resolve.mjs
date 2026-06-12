@@ -1,16 +1,30 @@
-// src/ri-resolve.mjs — RI3: resolver + readable_label diagnostic (ported from IRI_Linter)
-export { collect } from './ri-collect.mjs';
-
+// src/ri-resolve.mjs — RI4: resolver + readable_label + scheme_violation (D7)
 const LOCAL_NS = [
   'http://example.org/apqc#',
   'http://example.org/apqc/perf#',
 ];
 
-const CCO_NS = 'http://www.ontologyrepository.com/CommonCoreOntologies/';
+const CCO_NS_LIST = [
+  'https://www.commoncoreontologies.org/',
+  'http://www.ontologyrepository.com/CommonCoreOntologies/',
+];
+const EX_NS = 'http://example.org/apqc#';
 const OPAQUE_RE = /^ont\d+$/;
+const ORG_CAPABILITY_LOCAL = 'ont00000568';
 
 function isLocal(iri) {
   return LOCAL_NS.some(ns => iri.startsWith(ns));
+}
+
+function getCCOLocal(iri) {
+  for (const ns of CCO_NS_LIST) {
+    if (iri.startsWith(ns)) return iri.slice(ns.length);
+  }
+  return null;
+}
+
+function isOrgCapability(iri) {
+  return getCCOLocal(iri) === ORG_CAPABILITY_LOCAL;
 }
 
 function normalizeForLookup(s) {
@@ -41,17 +55,31 @@ export function resolve(collected, register) {
           issues.push({ type: 'dangling_ref', iri: ref.iri, module: ref.module, line: ref.line });
         }
       }
-    } else if (ref.iri.startsWith(CCO_NS)) {
-      const local = ref.iri.slice(CCO_NS.length);
-      if (!OPAQUE_RE.test(local)) {
+    } else {
+      const ccoLocal = getCCOLocal(ref.iri);
+      if (ccoLocal !== null && !OPAQUE_RE.test(ccoLocal)) {
         const key = `${ref.iri}\0${ref.module}\0${ref.line}`;
         if (!seenLabel.has(key)) {
           seenLabel.add(key);
-          const suggestion = lookupSuggestion(local, register);
+          const suggestion = lookupSuggestion(ccoLocal, register);
           const issue = { type: 'readable_label', iri: ref.iri, module: ref.module, line: ref.line };
           if (suggestion !== undefined) issue.suggestion = suggestion;
           issues.push(issue);
         }
+      }
+    }
+  }
+
+  // FR-12: scheme_violation — uses collected.classInfo if present
+  if (collected.classInfo) {
+    for (const [iri, info] of collected.classInfo) {
+      if (!declared.has(iri) || !iri.startsWith(EX_NS) || info.pcfID == null) continue;
+      const localName = iri.slice(EX_NS.length);
+      const isCapability = info.subClassOf.some(isOrgCapability);
+      if (/^P\d+$/.test(localName) && isCapability) {
+        issues.push({ type: 'scheme_violation', iri, module: info.module, line: info.line, rule: 'capability-as-process' });
+      } else if (!isCapability && localName !== `P${info.pcfID}`) {
+        issues.push({ type: 'scheme_violation', iri, module: info.module, line: info.line, rule: 'pcf-without-P-iri' });
       }
     }
   }

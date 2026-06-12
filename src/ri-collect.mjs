@@ -2,7 +2,13 @@ import { Parser } from '../vendor/n3.mjs';
 
 const EX = 'http://example.org/apqc#';
 const PERF = 'http://example.org/apqc/perf#';
+const CCO_NS_LIST = [
+  'https://www.commoncoreontologies.org/',
+  'http://www.ontologyrepository.com/CommonCoreOntologies/',
+];
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+const RDFS_SUBCLASSOF = 'http://www.w3.org/2000/01/rdf-schema#subClassOf';
+const PCF_ID_PRED = 'http://example.org/apqc#pcfID';
 
 const DEFINING_TYPES = new Set([
   'http://www.w3.org/2002/07/owl#Class',
@@ -15,6 +21,10 @@ const DEFINING_TYPES = new Set([
 
 function isLocal(iri) {
   return iri.startsWith(EX) || iri.startsWith(PERF);
+}
+
+function isCCO(iri) {
+  return CCO_NS_LIST.some(ns => iri.startsWith(ns));
 }
 
 function safeContent(line) {
@@ -73,11 +83,12 @@ function findLine(lines, prefixMap, iri) {
 
 /**
  * @param {Array<{name: string, text: string}>} modules
- * @returns {{ declared: Set<string>, references: Array<{iri:string,module:string,line:number,position:string}> }}
+ * @returns {{ declared: Set<string>, references: Array<{iri:string,module:string,line:number,position:string}>, classInfo: Map }}
  */
 export function collect(modules) {
   const declared = new Set();
   const references = [];
+  const classInfo = new Map();
 
   for (const mod of modules) {
     const { name, text } = mod;
@@ -93,6 +104,7 @@ export function collect(modules) {
 
     for (const quad of quads) {
       const { subject, predicate, object } = quad;
+      const isRestriction = subject.termType === 'BlankNode';
 
       // FR-6a: declaration recognition — subject of a defining-type triple
       if (
@@ -104,12 +116,55 @@ export function collect(modules) {
         isLocal(subject.value)
       ) {
         declared.add(subject.value);
+        if (subject.value.startsWith(EX) && !classInfo.has(subject.value)) {
+          classInfo.set(subject.value, {
+            pcfID: null,
+            subClassOf: [],
+            module: name,
+            line: findLine(lines, prefixMap, subject.value),
+          });
+        }
+      }
+
+      // Collect pcfID literal for classInfo
+      if (
+        predicate.termType === 'NamedNode' &&
+        predicate.value === PCF_ID_PRED &&
+        subject.termType === 'NamedNode' &&
+        subject.value.startsWith(EX) &&
+        object.termType === 'Literal'
+      ) {
+        if (!classInfo.has(subject.value)) {
+          classInfo.set(subject.value, {
+            pcfID: null,
+            subClassOf: [],
+            module: name,
+            line: findLine(lines, prefixMap, subject.value),
+          });
+        }
+        classInfo.get(subject.value).pcfID = object.value;
+      }
+
+      // Collect rdfs:subClassOf for classInfo
+      if (
+        predicate.termType === 'NamedNode' &&
+        predicate.value === RDFS_SUBCLASSOF &&
+        subject.termType === 'NamedNode' &&
+        subject.value.startsWith(EX) &&
+        object.termType === 'NamedNode'
+      ) {
+        if (!classInfo.has(subject.value)) {
+          classInfo.set(subject.value, {
+            pcfID: null,
+            subClassOf: [],
+            module: name,
+            line: findLine(lines, prefixMap, subject.value),
+          });
+        }
+        classInfo.get(subject.value).subClassOf.push(object.value);
       }
 
       // FR-6, FR-6b: reference collection — every local NamedNode in any position
-      // position='restriction' when subject is a BlankNode (owl:Restriction filler quad)
-      const isRestriction = subject.termType === 'BlankNode';
-
       if (subject.termType === 'NamedNode' && isLocal(subject.value)) {
         references.push({
           iri: subject.value,
@@ -136,8 +191,27 @@ export function collect(modules) {
           position: isRestriction ? 'restriction' : 'object',
         });
       }
+
+      // Also collect CCO namespace references (for readable_label detection in resolve)
+      if (predicate.termType === 'NamedNode' && isCCO(predicate.value)) {
+        references.push({
+          iri: predicate.value,
+          module: name,
+          line: findLine(lines, prefixMap, predicate.value),
+          position: isRestriction ? 'restriction' : 'predicate',
+        });
+      }
+
+      if (object.termType === 'NamedNode' && isCCO(object.value)) {
+        references.push({
+          iri: object.value,
+          module: name,
+          line: findLine(lines, prefixMap, object.value),
+          position: isRestriction ? 'restriction' : 'object',
+        });
+      }
     }
   }
 
-  return { declared, references };
+  return { declared, references, classInfo };
 }
