@@ -16,3 +16,21 @@ Exit codes: **0** clean, **1** violations found, **2** systemic error (missing/u
 Independently verified against the spec's own acceptance cases (not just the loop's tier):
 - **FR-19** `clean.ttl` → exit 0 (verified references in prefixed and full-IRI form; comment and `@prefix` lines ignored).
 - **FR-18** `dirty.ttl` → exit 1 with exactly: `cco:ont99999999` and its full-IRI form → `unverified`; `cco:has_output` → `readable_label` suggesting `cco:ont00001986` (FR-13 alias normalization); `cco:ONT001` → `readable_label` with no suggestion (the `/^ont\d+$/` case-sensitivity trap); comment/`@prefix` CCO-looking text not counted; the two verified references not flagged.
+
+---
+
+# Referential-Integrity Linter (RefIntegrity) — partial autonomous build (2/3 modules)
+
+A *second*, separate tool in this repo (`src/ri-collect.mjs`, `src/ri-resolve.mjs`, `src/ri-cli.mjs`), built from [`FNSR-RefIntegrity-Linter-Spec-R1.0.md`](FNSR-RefIntegrity-Linter-Spec-R1.0.md) by the same loop — but with a new participant: an **autonomous architect** that authored the module interfaces up front (the architect experiment, [Skreen5hot/BIBS2](https://github.com/Skreen5hot/BIBS2)). It checks that every project-minted (`ex:`/`perf:`) IRI **referenced** anywhere in a merged TTL corpus **resolves** to a **declared** term — the "missing third leg" of IRI integrity that the CCO-only linter above can't catch.
+
+```
+node src/ri-cli.mjs --modules <file.ttl…> [--register <register.json>]
+```
+
+**Built and working: `collect` + `resolve` + CLI (dangling-reference detection)** — **50 passing assertions** (`node test/ri-run.mjs`), exit `1` on violations / `0` clean (FR-15). Verified on the dirty fixture: `ex:NoSuchCapability` and `ex:NoSuchProcess` (the latter inside an `owl:Restriction` filler) are reported as `dangling_ref` at their lines; declared references resolve cross-module and are not flagged.
+
+Notes on this build (an honest record):
+- **`collect` is built on a real RDF parser** — N3.js, vendored (pinned + SHA-256 + container-verified, see [`vendor/PROVENANCE.md`](vendor/PROVENANCE.md)). The loop first tried a hand-rolled lexical tokenizer; the in-loop judge **caught it being wrong** (it dropped semicolons, breaking `owl:Restriction` parsing — FR-3's predicted lexical unsoundness), so the parser was delegated to N3.js, exactly as the spec allows.
+- **The composition held** — the CLI imports both `collect` and `resolve` and wires them, reimplementing neither (the architect's `resolve ← collect` contract).
+- **Deferred (Module 3):** the ported `readable_label` diagnostic (FR-11) and the D7 `scheme_violation` checks (FR-12) are **not** built — the multi-file *edit* module repeatedly ran away in generation (a characterized limitation of whole-file edit change-sets, not a spec or composition problem). The dangling-reference core is complete and standalone.
+- **The corpus baseline (FR-18)** is a post-build integration check over the live BPO corpus, out of the sandbox's scope.

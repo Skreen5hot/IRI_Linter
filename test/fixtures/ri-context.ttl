@@ -1,0 +1,4 @@
+@prefix ex: <http://example.org/apqc#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+ex:RealCapability a owl:Class .

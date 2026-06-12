@@ -1,0 +1,21 @@
+@prefix ex: <http://example.org/apqc#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix cco: <http://www.ontologyrepository.com/CommonCoreOntologies/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+# This comment mentions ex:NotARef cco:also-not-counted -- must NOT produce references (FR-7)
+
+ex:requiresCapability a owl:ObjectProperty .
+ex:pcfID a owl:DatatypeProperty .
+
+ex:SomeProcess a owl:Class ;
+    ex:requiresCapability ex:RealCapability ;
+    ex:requiresCapability ex:NoSuchCapability ;
+    owl:subClassOf [
+        owl:onProperty cco:ont00001777 ;
+        owl:someValuesFrom ex:NoSuchProcess
+    ] ;
+    cco:has_output ex:SomeProcess .
+
+ex:P10734 a owl:Class ;
+    ex:pcfID "10734" ;
+    rdfs:subClassOf cco:ont00000568 .
