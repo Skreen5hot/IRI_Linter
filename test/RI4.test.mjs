@@ -51,7 +51,7 @@ const REG = [{ iri: CCO + 'ont00001986', alias: 'has-output', label: 'has output
       { iri: EX + 'RealCapability',     module: 'ri4-context.ttl', line: 3,  position: 'subject'     },
     ],
     classInfo: new Map([
-      [EX + 'P10734', { pcfID: '10734', subClassOf: [CCO + 'ont00000568'], module: 'ri4-subject.ttl', line: 11 }],
+      [EX + 'P10734', { isClass: true, pcfID: '10734', subClassOf: [CCO + 'ont00000568'], module: 'ri4-subject.ttl', line: 11 }],
     ]),
   };
 
@@ -94,7 +94,7 @@ const REG = [{ iri: CCO + 'ont00001986', alias: 'has-output', label: 'has output
   const collected = {
     declared: new Set([EX + 'P99999']),
     references: [{ iri: EX + 'P99999', module: 't.ttl', line: 3, position: 'subject' }],
-    classInfo: new Map([[EX + 'P99999', { pcfID: '99999', subClassOf: [CCO + 'ont00000568'], module: 't.ttl', line: 3 }]]),
+    classInfo: new Map([[EX + 'P99999', { isClass: true, pcfID: '99999', subClassOf: [CCO + 'ont00000568'], module: 't.ttl', line: 3 }]]),
   };
   const issues = resolve(collected);
   assert(issues.some(i => i.type === 'scheme_violation' && i.iri === EX + 'P99999' && i.rule === 'capability-as-process'),
@@ -109,7 +109,7 @@ const REG = [{ iri: CCO + 'ont00001986', alias: 'has-output', label: 'has output
   const collected = {
     declared: new Set([EX + 'ManageIT']),
     references: [{ iri: EX + 'ManageIT', module: 't.ttl', line: 5, position: 'subject' }],
-    classInfo: new Map([[EX + 'ManageIT', { pcfID: '10734', subClassOf: [], module: 't.ttl', line: 5 }]]),
+    classInfo: new Map([[EX + 'ManageIT', { isClass: true, pcfID: '10734', subClassOf: [], module: 't.ttl', line: 5 }]]),
   };
   const issues = resolve(collected);
   assert(issues.some(i => i.type === 'scheme_violation' && i.iri === EX + 'ManageIT' && i.rule === 'pcf-without-P-iri'),
@@ -124,7 +124,7 @@ const REG = [{ iri: CCO + 'ont00001986', alias: 'has-output', label: 'has output
   const collected = {
     declared: new Set([EX + 'P10734']),
     references: [{ iri: EX + 'P10734', module: 't.ttl', line: 2, position: 'subject' }],
-    classInfo: new Map([[EX + 'P10734', { pcfID: '10734', subClassOf: [], module: 't.ttl', line: 2 }]]),
+    classInfo: new Map([[EX + 'P10734', { isClass: true, pcfID: '10734', subClassOf: [], module: 't.ttl', line: 2 }]]),
   };
   const issues = resolve(collected);
   assert(!issues.some(i => i.type === 'scheme_violation'),
@@ -139,7 +139,7 @@ const REG = [{ iri: CCO + 'ont00001986', alias: 'has-output', label: 'has output
   const collected = {
     declared: new Set([EX + 'ManageIT']),
     references: [{ iri: EX + 'ManageIT', module: 't.ttl', line: 4, position: 'subject' }],
-    classInfo: new Map([[EX + 'ManageIT', { pcfID: '10734', subClassOf: [CCO + 'ont00000568'], module: 't.ttl', line: 4 }]]),
+    classInfo: new Map([[EX + 'ManageIT', { isClass: true, pcfID: '10734', subClassOf: [CCO + 'ont00000568'], module: 't.ttl', line: 4 }]]),
   };
   const issues = resolve(collected);
   assert(!issues.some(i => i.type === 'scheme_violation'),

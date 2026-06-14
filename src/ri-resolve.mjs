@@ -73,7 +73,8 @@ export function resolve(collected, register) {
   // FR-12: scheme_violation — uses collected.classInfo if present
   if (collected.classInfo) {
     for (const [iri, info] of collected.classInfo) {
-      if (!declared.has(iri) || !iri.startsWith(EX_NS) || info.pcfID == null) continue;
+      // FR-12: skip non-owl:Class subjects (NamedIndividual/Concept catalog nodes are exempt)
+      if (!declared.has(iri) || !iri.startsWith(EX_NS) || info.pcfID == null || !info.isClass) continue;
       const localName = iri.slice(EX_NS.length);
       const isCapability = info.subClassOf.some(isOrgCapability);
       if (/^P\d+$/.test(localName) && isCapability) {

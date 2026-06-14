@@ -9,6 +9,7 @@ const CCO_NS_LIST = [
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const RDFS_SUBCLASSOF = 'http://www.w3.org/2000/01/rdf-schema#subClassOf';
 const PCF_ID_PRED = 'http://example.org/apqc#pcfID';
+const OWL_CLASS = 'http://www.w3.org/2002/07/owl#Class';
 
 const DEFINING_TYPES = new Set([
   'http://www.w3.org/2002/07/owl#Class',
@@ -116,13 +117,20 @@ export function collect(modules) {
         isLocal(subject.value)
       ) {
         declared.add(subject.value);
-        if (subject.value.startsWith(EX) && !classInfo.has(subject.value)) {
-          classInfo.set(subject.value, {
-            pcfID: null,
-            subClassOf: [],
-            module: name,
-            line: findLine(lines, prefixMap, subject.value),
-          });
+        if (subject.value.startsWith(EX)) {
+          if (!classInfo.has(subject.value)) {
+            classInfo.set(subject.value, {
+              isClass: false,
+              pcfID: null,
+              subClassOf: [],
+              module: name,
+              line: findLine(lines, prefixMap, subject.value),
+            });
+          }
+          // FR-12: track owl:Class subjects specifically (NamedIndividual/Concept are exempt)
+          if (object.value === OWL_CLASS) {
+            classInfo.get(subject.value).isClass = true;
+          }
         }
       }
 
@@ -136,6 +144,7 @@ export function collect(modules) {
       ) {
         if (!classInfo.has(subject.value)) {
           classInfo.set(subject.value, {
+            isClass: false,
             pcfID: null,
             subClassOf: [],
             module: name,
@@ -155,6 +164,7 @@ export function collect(modules) {
       ) {
         if (!classInfo.has(subject.value)) {
           classInfo.set(subject.value, {
+            isClass: false,
             pcfID: null,
             subClassOf: [],
             module: name,
